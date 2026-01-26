@@ -1,0 +1,60 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ProductCategory {
+  PLUGIN
+  FONT
+  IMAGE
+  TEMPLATE
+  SCRIPT
+}
+
+enum OrderStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+model Product {
+  id              String          @id @default(cuid())
+  title           String
+  description     String
+  price           Int             // Stored in cents (e.g., 2900 = $29.00)
+  category        ProductCategory
+  thumbnailUrl    String          @map("thumbnail_url")
+  previewVideoUrl String?         @map("preview_video_url")
+  downloadLink    String          @map("download_link") // Private field, should not be exposed easily
+  
+  isDeleted       Boolean         @default(false)
+  
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  orders          Order[]
+
+  @@map("products")
+}
+
+model Order {
+  id            String      @id @default(cuid())
+  userEmail     String      @map("user_email")
+  status        OrderStatus @default(PENDING)
+  transactionId String?     @map("transaction_id")
+  
+  productId     String      @map("product_id")
+  product       Product     @relation(fields: [productId], references: [id])
+  
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  @@map("orders")
+}
