@@ -25,8 +25,9 @@ export default function CheckoutPage() {
 
     const [mounted, setMounted] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [orderSuccess, setOrderSuccess] = useState(false);
+    const [isSuccess, setIsSuccess] = useState(false);
     const [orderId, setOrderId] = useState("");
+    const [confirmedTotal, setConfirmedTotal] = useState(0);
 
     const [formData, setFormData] = useState({
         name: "",
@@ -35,17 +36,22 @@ export default function CheckoutPage() {
 
     useEffect(() => {
         setMounted(true);
-        // Redirect if cart is empty and not success
-        if (items.length === 0 && !orderSuccess) {
-            // Optional: router.push('/'); 
+    }, []);
+
+    useEffect(() => {
+        if (mounted && items.length === 0 && !isSuccess) {
+            router.push('/');
         }
-    }, [items.length, orderSuccess]);
+    }, [mounted, items.length, isSuccess, router]);
 
     const handlePlaceOrder = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
 
         try {
+            const currentTotal = total(); // Capture total before clearing
+            setConfirmedTotal(currentTotal); // 1. Save total immediately
+
             const result = await createOrder(
                 formData.email,
                 items.map(i => ({ id: i.id, price: i.price }))
@@ -53,7 +59,10 @@ export default function CheckoutPage() {
 
             if (result.success) {
                 setOrderId(result.orderId!);
-                setOrderSuccess(true);
+                setIsSuccess(true); // 2. Set success flag
+
+                // 3. Clear cart AFTER setting success state
+                // Using setTimeout to ensure UI updates first if needed, but direct call should work with correct React batching
                 clearCart();
             } else {
                 alert("Lỗi: " + result.error);
@@ -69,11 +78,11 @@ export default function CheckoutPage() {
     if (!mounted) return null;
 
     // SUCCESS STEP (TING TING)
-    if (orderSuccess) {
+    if (isSuccess) {
         // VietQR QuickLink (Compact mode)
         // https://img.vietqr.io/image/<BANK_ID>-<ACCOUNT_NO>-<TEMPLATE>.jpg?amount=<AMOUNT>&addInfo=<INFO>
-        // Note: total() returns VND Number.
-        const qrUrl = `https://img.vietqr.io/image/${BANK_CONFIG.BANK_ID}-${BANK_CONFIG.ACCOUNT_NO}-compact.jpg?amount=${total()}&addInfo=${orderId}`;
+        // Note: total() returns VND Number, but we use confirmedTotal here.
+        const qrUrl = `https://img.vietqr.io/image/${BANK_CONFIG.BANK_ID}-${BANK_CONFIG.ACCOUNT_NO}-compact.jpg?amount=${confirmedTotal}&addInfo=${orderId}`;
 
         return (
             <div className="min-h-screen pt-24 pb-20 bg-slate-950 flex items-center justify-center">
@@ -97,7 +106,7 @@ export default function CheckoutPage() {
                         </div>
 
                         <p className="text-slate-300 font-medium mb-2">Vui lòng quét mã QR để thanh toán</p>
-                        <p className="text-2xl font-bold text-orange-500 mb-8">{formatVND(total())}</p>
+                        <p className="text-2xl font-bold text-orange-500 mb-8">{formatVND(confirmedTotal)}</p>
 
                         <div className="flex flex-col sm:flex-row gap-4 justify-center">
                             <Link
