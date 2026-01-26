@@ -17,9 +17,13 @@ interface ProductCardProps {
     product: Product;
 }
 
+import { useCartStore } from '@/store/useCartStore';
+
 import Link from 'next/link';
 
 export default function ProductCard({ product }: ProductCardProps) {
+    const { addToCart } = useCartStore();
+
     return (
         <motion.div
             whileHover={{ scale: 1.02 }}
@@ -39,10 +43,15 @@ export default function ProductCard({ product }: ProductCardProps) {
                         <div className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full text-white transition-colors" title="Xem nhanh">
                             <Eye size={20} />
                         </div>
-                        <div className="p-3 bg-orange-500 hover:bg-orange-400 rounded-full text-white transition-colors shadow-lg shadow-orange-500/30" title="Thêm vào giỏ" onClick={(e) => {
-                            e.preventDefault();
-                            // Add to cart logic here
-                        }}>
+                        <div
+                            className="p-3 bg-orange-500 hover:bg-orange-400 rounded-full text-white transition-colors shadow-lg shadow-orange-500/30 cursor-pointer"
+                            title="Thêm vào giỏ"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                addToCart(product);
+                            }}
+                        >
                             <ShoppingCart size={20} />
                         </div>
                     </div>
