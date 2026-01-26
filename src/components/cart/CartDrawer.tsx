@@ -115,7 +115,13 @@ export default function CartDrawer() {
                                     <span className="text-orange-500">{formatVND(total())}</span>
                                 </div>
 
-                                <button className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white font-bold rounded-xl shadow-lg shadow-orange-500/25 flex items-center justify-center gap-2 transform active:scale-[0.98] transition-all">
+                                <button
+                                    onClick={() => {
+                                        closeCart();
+                                        window.location.href = '/checkout';
+                                    }}
+                                    className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white font-bold rounded-xl shadow-lg shadow-orange-500/25 flex items-center justify-center gap-2 transform active:scale-[0.98] transition-all"
+                                >
                                     <CreditCard size={20} />
                                     THANH TOÁN
                                 </button>
