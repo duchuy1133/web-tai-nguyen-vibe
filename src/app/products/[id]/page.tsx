@@ -160,8 +160,14 @@ export default async function ProductDetailPage({ params }: Props) {
                 {/* Description Section */}
                 <div className="mt-20 max-w-4xl">
                     <h2 className="text-2xl font-bold text-white mb-6 border-l-4 border-amber-500 pl-4">Mô tả chi tiết</h2>
-                    <div className="prose prose-invert prose-lg text-slate-300 leading-relaxed">
-                        <p>{product.description}</p>
+                    <div className="prose prose-invert prose-lg text-slate-300 leading-relaxed max-w-none
+                        [&>h3]:text-xl [&>h3]:font-bold [&>h3]:text-orange-500 [&>h3]:mt-8 [&>h3]:mb-3
+                        [&>p]:text-slate-300 [&>p]:mb-4 [&>p]:leading-7
+                        [&>ul]:list-disc [&>ul]:list-inside [&>ul]:text-slate-300 [&>ul]:mb-6 [&>ul]:space-y-2 [&>ul]:pl-2
+                        [&>li]:marker:text-amber-500
+                        [&>strong]:text-white [&>strong]:font-semibold [&>strong]:text-amber-400/90
+                    ">
+                        <div dangerouslySetInnerHTML={{ __html: product.description }} />
                         <p className="mt-4">
                             Gói tài nguyên này được thiết kế dành riêng cho các video editor chuyên nghiệp và content creator.
                             Dễ dàng sử dụng chỉ với thao tác kéo thả, tiết kiệm hàng giờ đồng hồ chỉnh sửa thủ công.
