@@ -6,20 +6,36 @@ import json
 import uuid
 from datetime import datetime
 import re
+import sys
+import requests # Thư viện mới để gọi Facebook
 
-# --- 1. CẤU HÌNH (THAY THÔNG TIN CỦA ANH VÀO ĐÂY) ---
-DEEPSEEK_API_KEY = "sk-d14761881cdd4d7e9c610485577e6a8d" # Dán Key DeepSeek của anh vào đây
+# --- 1. CẤU HÌNH HỆ THỐNG ---
+
+# Token Face & ID Page (Của anh vừa gửi)
+FB_PAGE_ACCESS_TOKEN = "EAANNbe4rjMIBQjSzRvsOHz2tSkX1dVVLenfJTF1SWOAzNIvZC0fWfZCIOfPuHKDNQp3SZA5FrRhppVaZBRowJIky3CrrSMrA10Rg8WgBriDXjvcAktNzZBFaCwH4Boawo2PmiqMwwZBZAaNRhu0Jdz0Mg12tAowNeR6adYmSB2cGgwa2LEkGtzghyQlARubSZBMZArGKJnXFDNcA2i3N3dzNk"
+FB_PAGE_ID = "456629970860389"
+
+# Cấu hình Website & AI
+WEBSITE_DOMAIN = "http://localhost:3000"  # Sau này có tên miền thật (vd: vibedigital.vn) thì sửa ở đây
+DEEPSEEK_API_KEY = "sk-d14761881cdd4d7e9c610485577e6a8d" 
+
+# Cấu hình Database (Em đã thay lại KEY SERVICE ROLE xịn để có quyền ghi dữ liệu)
 SUPABASE_URL = "https://ukkfurbyqajnmmoxftjh.supabase.co".strip()
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVra2Z1cmJ5cWFqbm1tb3hmdGpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0MDIwMjksImV4cCI6MjA4Mzk3ODAyOX0.IHm6gOXkQTKBw3DwTJWr6pEf6GL2ksVf_XiXI-9lbOI".strip() # Key bắt đầu bằng eyJ...)
+
 # --- 2. KẾT NỐI ---
-client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url="https://api.deepseek.com")
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+try:
+    client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url="https://api.deepseek.com")
+    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+except Exception as e:
+    print(f"❌ LỖI KẾT NỐI HỆ THỐNG: {e}")
+    input("Bấm Enter để thoát...")
+    sys.exit()
 
 def clean_json(text):
     text = text.replace("```json", "").replace("```", "")
     return text.strip()
 
-# Hàm tạo Slug (Đường dẫn thân thiện) từ Tiêu đề
 def create_slug(title):
     slug = title.lower()
     slug = re.sub(r'[àáạảãâầấậẩẫăằắặẳẵ]', 'a', slug)
@@ -31,59 +47,91 @@ def create_slug(title):
     slug = re.sub(r'[đ]', 'd', slug)
     slug = re.sub(r'[^a-z0-9\s-]', '', slug)
     slug = re.sub(r'\s+', '-', slug)
-    return slug + "-" + str(int(time.time())) # Thêm số đuôi để không bị trùng
+    return slug + "-" + str(int(time.time()))
 
-print("✍️  CHÀO MỪNG ĐẾN VỚI TÒA SOẠN BÁO AI - VIBE DIGITAL")
-print("-" * 50)
-
-while True:
-    topic = input("\n👉 Nhập chủ đề anh muốn viết (hoặc gõ 'exit' để thoát): ")
-    
-    if topic.lower() == 'exit':
-        break
-        
-    print(f"\n⏳ Đang bảo DeepSeek viết bài về: '{topic}'... (Chờ khoảng 20s nhé)")
-    
-    # 1. Prompt cho DeepSeek
-    prompt = f"""
-    Bạn là Chuyên gia Content Marketing cho website "VibeDigital" (Chuyên bán tài nguyên Video Editing).
-    Hãy viết bài Blog chuẩn SEO về chủ đề: "{topic}".
-    QUY TẮC QUAN TRỌNG VỀ LINK NỘI BỘ (INTERNAL LINK):
-    Trong bài viết, bạn BẮT BUỘC phải khéo léo chèn các thẻ <a> dẫn về các danh mục sau đây (ít nhất 3 link trong bài):
-    - Khi nhắc đến Plugin, Premiere, After Effects -> Chèn link: <a href="/category/plugin" style="color: #f97316; font-weight: bold;">kho Plugin Premiere Pro</a>
-    - Khi nhắc đến Template, Mẫu dựng sẵn -> Chèn link: <a href="/category/template" style="color: #f97316; font-weight: bold;">Template dựng sẵn</a>
-    - Khi nhắc đến Màu, LUTs, Grading -> Chèn link: <a href="/category/luts" style="color: #f97316; font-weight: bold;">bộ màu LUTs điện ảnh</a>
-    - Khi nhắc đến Âm thanh, SFX -> Chèn link: <a href="/category/sound" style="color: #f97316; font-weight: bold;">kho hiệu ứng âm thanh</a>
-    Yêu cầu JSON duy nhất:
-    {{
-        "title": "Tiêu đề giật tít, chứa con số (Ví dụ: Top 5..., 3 Cách...)",
-        "excerpt": "Sapo ngắn gọn 2 câu kích thích tò mò.",
-        "content": "Nội dung HTML chi tiết.",
-        "image_prompt": "Mô tả ảnh tiếng Anh để vẽ AI"
-    }}
-    
-    Yêu cầu phần 'content' (HTML):
-    - Mở đầu: Nêu nỗi đau của Editor.
-    - Thân bài: Dùng thẻ <h2> cho các ý chính. Dùng <ul> <li> cho danh sách.
-    - Văn phong: Thân thiện, chuyên gia, KHÔNG ĐƯỢC GIỐNG ROBOT.
-    - KẾT BÀI (QUAN TRỌNG): Phải có một đoạn kêu gọi hành động (CTA) mạnh mẽ: "Đừng quên ghé thăm kho tài nguyên VibeDigital để tải [Tên Category] giúp bạn edit nhanh gấp 5 lần!"
-    """
+def post_to_facebook(title, excerpt, image_url, slug):
+    """Hàm đăng bài lên Fanpage"""
     try:
+        url = f"https://graph.facebook.com/{FB_PAGE_ID}/photos"
+        
+        # Nội dung bài đăng trên Face
+        message = f"🔥 {title}\n\n{excerpt}\n\n👉 Tải xuống ngay tại: {WEBSITE_DOMAIN}/blog/{slug}\n\n#VibeDigital #VideoEditing #TaiNguyenMienPhi"
+        
+        payload = {
+            'url': image_url, # Facebook tự tải ảnh từ Link này
+            'caption': message,
+            'access_token': FB_PAGE_ACCESS_TOKEN
+        }
+        
+        response = requests.post(url, data=payload)
+        
+        if response.status_code == 200:
+            print("✅ Đã bắn sang Fanpage thành công!")
+        else:
+            print(f"⚠️ Lỗi đăng Face: {response.text}")
+            
+    except Exception as e:
+        print(f"⚠️ Không đăng được lên Face: {e}")
+
+# --- CHƯƠNG TRÌNH CHÍNH ---
+print("\n" + "="*50)
+print("🤖  AUTO BLOGGER V3 - WEB + FACEBOOK (FULL FIX)")
+print("="*50)
+
+# 1. Đọc file topics.txt
+try:
+    with open('topics.txt', 'r', encoding='utf-8') as f:
+        topics = [line.strip() for line in f if line.strip()]
+except FileNotFoundError:
+    print("❌ Lỗi: Không tìm thấy file 'topics.txt'!")
+    input("Bấm Enter để thoát...")
+    sys.exit()
+
+if not topics:
+    print("⚠️ File 'topics.txt' đang trống!")
+    input("Bấm Enter để thoát...")
+    sys.exit()
+
+print(f"📋 Tìm thấy {len(topics)} chủ đề.")
+print("🚀 Bắt đầu chiến dịch phủ sóng mạng xã hội...\n")
+
+success_count = 0
+
+for index, topic in enumerate(topics, 1):
+    print("-" * 50)
+    print(f"Process [{index}/{len(topics)}]: {topic}")
+    
+    try:
+        # --- A. VIẾT BÀI ---
+        prompt = f"""
+        Bạn là Chuyên gia Content Marketing cho VibeDigital.
+        Chủ đề: "{topic}".
+        
+        QUY TẮC LINK NỘI BỘ:
+        Chèn ít nhất 3 thẻ <a> trỏ về các category (plugin, template, luts, sound).
+        
+        Trả về JSON:
+        {{
+            "title": "Tiêu đề hấp dẫn (Tiếng Việt)",
+            "excerpt": "Sapo 2 câu kịch tính.",
+            "content": "Nội dung HTML chi tiết.",
+            "image_prompt": "Mô tả ảnh tiếng Anh ngắn gọn"
+        }}
+        """
+        
         response = client.chat.completions.create(
             model="deepseek-chat",
             messages=[{"role": "user", "content": prompt}],
             stream=False
         )
         
-        # 2. Xử lý dữ liệu từ AI
         blog_data = json.loads(clean_json(response.choices[0].message.content))
         
-        # 3. Tự động tạo ảnh bìa bằng AI (Pollinations)
+        # --- B. VẼ ẢNH ---
         img_prompt = blog_data['image_prompt'].replace(" ", "%20")
         fake_image_url = f"https://image.pollinations.ai/prompt/{img_prompt}?width=800&height=500&nologo=true"
         
-        # 4. Chuẩn bị dữ liệu DB (Dùng bảng 'Post' - Chữ hoa P theo schema cũ)
-        # Lưu ý: Nếu Database anh dùng tên bảng là 'Post' thì giữ nguyên, nếu lỗi thì sửa thành 'posts'
+        # --- C. UPLOAD WEB ---
         final_data = {
             "id": str(uuid.uuid4()),
             "title": blog_data['title'],
@@ -94,17 +142,27 @@ while True:
             "created_at": datetime.utcnow().isoformat()
         }
         
-        # 5. Upload lên Supabase
-        # Bảng 'posts' (viết thường) đã được định nghĩa trong Schema
         supabase.table("posts").insert(final_data).execute()
-             
-        print(f"✅ ĐÃ ĐĂNG BÀI THÀNH CÔNG!")
-        print(f"📄 Tiêu đề: {final_data['title']}")
-        print(f"🖼️ Ảnh AI tự vẽ: {final_data['thumbnail']}")
+        print(f"✅ XONG WEB: {final_data['title']}")
+        success_count += 1
+        
+        # --- D. ĐĂNG FACEBOOK ---
+        print("⏳ Đang gửi sang Fanpage...")
+        post_to_facebook(
+            title=final_data['title'],
+            excerpt=final_data['excerpt'],
+            image_url=final_data['thumbnail'],
+            slug=final_data['slug']
+        )
         
     except Exception as e:
-        print(f"❌ Lỗi rồi anh ơi: {e}")
-        
-    print("-" * 50)
+        print(f"❌ LỖI: {e}")
 
-print("👋 Bye anh!")
+    # --- E. NGHỈ NGƠI ---
+    if index < len(topics):
+        print("💤 Nghỉ 30 giây (Tránh Facebook chặn spam)...")
+        time.sleep(30)
+
+print("\n" + "="*50)
+print(f"🎉 HOÀN TẤT CHIẾN DỊCH! {success_count}/{len(topics)} bài.")
+input("Bấm Enter để đóng cửa sổ...")
