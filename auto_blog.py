@@ -46,26 +46,28 @@ while True:
     
     # 1. Prompt cho DeepSeek
     prompt = f"""
-    Viết một bài Blog chuẩn SEO cho Website bán tài nguyên Video Editor.
-    Chủ đề: "{topic}"
-    
-    Yêu cầu trả về JSON duy nhất:
+    Bạn là Chuyên gia Content Marketing cho website "VibeDigital" (Chuyên bán tài nguyên Video Editing).
+    Hãy viết bài Blog chuẩn SEO về chủ đề: "{topic}".
+    QUY TẮC QUAN TRỌNG VỀ LINK NỘI BỘ (INTERNAL LINK):
+    Trong bài viết, bạn BẮT BUỘC phải khéo léo chèn các thẻ <a> dẫn về các danh mục sau đây (ít nhất 3 link trong bài):
+    - Khi nhắc đến Plugin, Premiere, After Effects -> Chèn link: <a href="/category/plugin" style="color: #f97316; font-weight: bold;">kho Plugin Premiere Pro</a>
+    - Khi nhắc đến Template, Mẫu dựng sẵn -> Chèn link: <a href="/category/template" style="color: #f97316; font-weight: bold;">Template dựng sẵn</a>
+    - Khi nhắc đến Màu, LUTs, Grading -> Chèn link: <a href="/category/luts" style="color: #f97316; font-weight: bold;">bộ màu LUTs điện ảnh</a>
+    - Khi nhắc đến Âm thanh, SFX -> Chèn link: <a href="/category/sound" style="color: #f97316; font-weight: bold;">kho hiệu ứng âm thanh</a>
+    Yêu cầu JSON duy nhất:
     {{
-        "title": "Tiêu đề bài viết hấp dẫn, giật gân (Tiếng Việt)",
-        "excerpt": "Mô tả ngắn gọn (Sapo) khoảng 2-3 câu để hiện ở danh sách.",
-        "content": "Nội dung bài viết chi tiết dạng HTML.",
-        "image_prompt": "Một câu mô tả tiếng Anh ngắn gọn về chủ đề này để AI vẽ ảnh (Ví dụ: cinematic camera lens, neon lighting)"
+        "title": "Tiêu đề giật tít, chứa con số (Ví dụ: Top 5..., 3 Cách...)",
+        "excerpt": "Sapo ngắn gọn 2 câu kích thích tò mò.",
+        "content": "Nội dung HTML chi tiết.",
+        "image_prompt": "Mô tả ảnh tiếng Anh để vẽ AI"
     }}
     
     Yêu cầu phần 'content' (HTML):
-    - Dùng thẻ <h2> cho các mục chính.
-    - Dùng <p> cho đoạn văn.
-    - Dùng <ul>, <li> cho danh sách.
-    - Viết giọng văn chuyên gia, chia sẻ kinh nghiệm thực tế.
-    - Độ dài: Khoảng 500-800 từ.
-    - Có kêu gọi hành động (Call to Action) ở cuối bài dẫn về trang chủ.
+    - Mở đầu: Nêu nỗi đau của Editor.
+    - Thân bài: Dùng thẻ <h2> cho các ý chính. Dùng <ul> <li> cho danh sách.
+    - Văn phong: Thân thiện, chuyên gia, KHÔNG ĐƯỢC GIỐNG ROBOT.
+    - KẾT BÀI (QUAN TRỌNG): Phải có một đoạn kêu gọi hành động (CTA) mạnh mẽ: "Đừng quên ghé thăm kho tài nguyên VibeDigital để tải [Tên Category] giúp bạn edit nhanh gấp 5 lần!"
     """
-    
     try:
         response = client.chat.completions.create(
             model="deepseek-chat",
