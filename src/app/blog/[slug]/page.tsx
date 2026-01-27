@@ -7,12 +7,15 @@ import { Metadata } from 'next';
 import { ChevronLeft, Calendar, User } from 'lucide-react';
 
 interface Props {
-    params: { slug: string };
+    params: Promise<{ slug: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+    const { slug } = await params;
+    const decodedSlug = decodeURIComponent(slug);
+
     const post = await prisma.post.findUnique({
-        where: { slug: params.slug },
+        where: { slug: decodedSlug },
     });
 
     if (!post) return { title: 'Not Found' };
@@ -26,8 +29,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export const revalidate = 60;
 
 export default async function BlogPostPage({ params }: Props) {
+    const { slug } = await params;
+    const decodedSlug = decodeURIComponent(slug);
+
     const post = await prisma.post.findUnique({
-        where: { slug: params.slug },
+        where: { slug: decodedSlug },
     });
 
     if (!post) notFound();

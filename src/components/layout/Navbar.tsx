@@ -32,6 +32,7 @@ export default function Navbar() {
                     <Link href="/category/template" className="text-slate-300 hover:text-white hover:text-amber-500 transition-colors font-medium text-sm">Templates</Link>
                     <Link href="/category/luts" className="text-slate-300 hover:text-white hover:text-amber-500 transition-colors font-medium text-sm">Luts & Màu</Link>
                     <Link href="/category/sound" className="text-slate-300 hover:text-white hover:text-amber-500 transition-colors font-medium text-sm">Âm thanh</Link>
+                    <Link href="/blog" className="text-slate-300 hover:text-white hover:text-amber-500 transition-colors font-medium text-sm">Blog</Link>
                 </div>
 
                 <div className="hidden md:flex items-center flex-1 max-w-sm relative">

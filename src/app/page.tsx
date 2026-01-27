@@ -2,6 +2,7 @@ import Link from "next/link";
 import ProductCard from "@/components/ui/ProductCard";
 import { ArrowRight, Sparkles, Zap, DollarSign, Database } from "lucide-react";
 import prisma from "@/lib/prisma";
+import Image from "next/image";
 
 // Server Component Fetching
 async function getProducts() {
@@ -22,10 +23,26 @@ async function getProducts() {
   }
 }
 
+async function getLatestPosts() {
+  try {
+    const posts = await prisma.post.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 3,
+    });
+    return posts;
+  } catch (error) {
+    console.error("Failed to fetch posts:", error);
+    return [];
+  }
+}
+
 export const revalidate = 60; // Revalidate every 60 seconds
 
 export default async function Home() {
-  const products = await getProducts();
+  const [products, posts] = await Promise.all([
+    getProducts(),
+    getLatestPosts(),
+  ]);
 
   return (
     <div className="min-h-screen">
@@ -89,10 +106,81 @@ export default async function Home() {
             <Link href="/category/sound" className="px-5 py-2 rounded-full text-sm font-medium transition-all bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800">
               Âm thanh
             </Link>
+            <Link href="/blog" className="px-5 py-2 rounded-full text-sm font-medium transition-all bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800">
+              Kiến thức (Blog)
+            </Link>
           </div>
         </div>
 
         <ProductGrid products={products} />
+      </section>
+
+
+      {/* Latest Blog Posts */}
+      <section className="py-20 bg-slate-950">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">
+              Tài nguyên & Kiến thức
+            </h2>
+            <p className="text-slate-400 text-lg max-w-2xl mx-auto">
+              Cập nhật xu hướng mới nhất trong ngành Video Editing.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {posts.map((post) => (
+              <Link
+                href={`/blog/${post.slug}`}
+                key={post.id}
+                className="group relative bg-slate-900/50 rounded-2xl overflow-hidden border border-slate-800 hover:border-purple-500/50 transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/10 flex flex-col"
+              >
+                <div className="aspect-video relative overflow-hidden bg-slate-900">
+                  {post.thumbnail ? (
+                    <Image
+                      src={post.thumbnail}
+                      alt={post.title}
+                      fill
+                      className="object-cover transition-transform duration-500 group-hover:scale-110"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-slate-600">
+                      No Image
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-6 flex-1 flex flex-col">
+                  <h3 className="text-xl font-bold mb-3 text-slate-100 group-hover:text-purple-400 transition-colors line-clamp-2">
+                    {post.title}
+                  </h3>
+                  <p className="text-slate-400 text-sm line-clamp-3 mb-4 flex-1">
+                    {post.excerpt}
+                  </p>
+                  <div className="flex items-center justify-between text-xs text-slate-500 mt-auto pt-4 border-t border-slate-800/50">
+                    <span>
+                      {new Date(post.createdAt).toLocaleDateString("vi-VN")}
+                    </span>
+                    <span className="text-purple-400 font-medium group-hover:translate-x-1 transition-transform flex items-center gap-1">
+                      Đọc tiếp &rarr;
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          <div className="text-center mt-12">
+            <Link
+              href="/blog"
+              className="inline-flex items-center gap-2 px-8 py-3 rounded-full bg-slate-900 border border-slate-700 text-slate-300 hover:text-white hover:border-slate-500 transition-all font-medium"
+            >
+              Xem tất cả bài viết
+              <ArrowRight size={16} />
+            </Link>
+          </div>
+        </div>
       </section>
 
       {/* Value Props */}
