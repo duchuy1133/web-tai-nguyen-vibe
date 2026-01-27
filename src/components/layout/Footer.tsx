@@ -1,3 +1,4 @@
+'use client';
 import Link from 'next/link';
 
 export default function Footer() {
@@ -22,20 +23,20 @@ export default function Footer() {
                     <div>
                         <h4 className="font-semibold text-white mb-4">Khám phá</h4>
                         <ul className="space-y-2 text-sm text-slate-400">
-                            <li><Link href="#" className="hover:text-amber-400 transition-colors">Tất cả tài nguyên</Link></li>
-                            <li><Link href="#" className="hover:text-amber-400 transition-colors">Premiere Plugins</Link></li>
-                            <li><Link href="#" className="hover:text-amber-400 transition-colors">Fonts & Typography</Link></li>
-                            <li><Link href="#" className="hover:text-amber-400 transition-colors">Stock Footage</Link></li>
+                            <li><Link href="/" className="hover:text-orange-500 transition-colors">Tất cả tài nguyên</Link></li>
+                            <li><Link href="/category/plugin" className="hover:text-orange-500 transition-colors">Premiere Plugins</Link></li>
+                            <li><Link href="/category/font" className="hover:text-orange-500 transition-colors">Fonts & Typography</Link></li>
+                            <li><Link href="/category/stock" className="hover:text-orange-500 transition-colors">Stock Footage</Link></li>
                         </ul>
                     </div>
 
                     <div>
                         <h4 className="font-semibold text-white mb-4">Hỗ trợ</h4>
                         <ul className="space-y-2 text-sm text-slate-400">
-                            <li><Link href="#" className="hover:text-amber-400 transition-colors">Trung tâm trợ giúp</Link></li>
-                            <li><Link href="#" className="hover:text-amber-400 transition-colors">Bản quyền (Licensing)</Link></li>
-                            <li><Link href="#" className="hover:text-amber-400 transition-colors">Điều khoản sử dụng</Link></li>
-                            <li><Link href="#" className="hover:text-amber-400 transition-colors">Chính sách bảo mật</Link></li>
+                            <li><Link href="/vip" className="hover:text-orange-500 transition-colors">Trung tâm trợ giúp (VIP)</Link></li>
+                            <li><Link href="/policy" className="hover:text-orange-500 transition-colors">Bản quyền (Licensing)</Link></li>
+                            <li><Link href="/policy" className="hover:text-orange-500 transition-colors">Điều khoản sử dụng</Link></li>
+                            <li><Link href="/policy" className="hover:text-orange-500 transition-colors">Chính sách bảo mật</Link></li>
                         </ul>
                     </div>
 
@@ -48,7 +49,10 @@ export default function Footer() {
                                 placeholder="Email của bạn"
                                 className="bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white w-full focus:outline-none focus:border-amber-500 transition-colors"
                             />
-                            <button className="bg-amber-500 hover:bg-amber-400 text-white p-2 rounded-lg transition-colors font-medium text-sm">
+                            <button
+                                onClick={() => alert("Cảm ơn bạn đã đăng ký! Chúng tôi sẽ gửi thông báo khi có tài nguyên mới.")}
+                                className="bg-amber-500 hover:bg-amber-400 text-white p-2 rounded-lg transition-colors font-medium text-sm"
+                            >
                                 Gửi
                             </button>
                         </div>
