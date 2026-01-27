@@ -130,15 +130,12 @@ export default async function ProductDetailPage({ params }: Props) {
                                 </span>
                             </div>
 
-                            <AddToCartButtons product={{
-                                id: product.id,
-                                title: product.title,
-                                price: (product.price / 100) * 25000,
-                                category: product.category,
-                                thumbnail: product.thumbnailUrl
-                            }} />
+                            {/* --- VIP & BUY LOGIC --- */}
+                            {/* TODO: Integrate Real Auth here. Mocking isVip = false for now */}
+                            {/* Change to true to test VIP view */}
+                            <VipActionSection product={product} />
 
-                            <div className="flex items-center gap-4 text-xs text-slate-500 justify-center sm:justify-start">
+                            <div className="flex items-center gap-4 text-xs text-slate-500 justify-center sm:justify-start mt-6">
                                 <span className="flex items-center gap-1"><ShieldCheck size={14} /> Thanh toán bảo mật</span>
                                 <span className="w-1 h-1 rounded-full bg-slate-700"></span>
                                 <span className="flex items-center gap-1"><CheckCircle2 size={14} /> Support 24/7</span>
@@ -197,4 +194,50 @@ function SpecRow({ icon, label, value }: { icon: React.ReactNode, label: string,
             <span className="text-slate-200 font-medium text-sm text-right">{value}</span>
         </div>
     )
+}
+
+function VipActionSection({ product }: { product: any }) {
+    // MOCK VIP STATUS: Change this to true to see VIP view
+    const isVip = false;
+
+    if (isVip) {
+        return (
+            <div className="space-y-4">
+                <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-xl flex items-start gap-3">
+                    <CheckCircle2 className="text-green-500 shrink-0 mt-1" />
+                    <div>
+                        <h4 className="font-bold text-green-500">Bạn là thành viên VIP</h4>
+                        <p className="text-sm text-green-400/80">Bạn được quyền tải xuống miễn phí tài nguyên này.</p>
+                    </div>
+                </div>
+
+                <Link
+                    href={product.downloadLink || "#"}
+                    target="_blank"
+                    className="w-full py-4 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl shadow-lg shadow-green-600/25 flex items-center justify-center gap-2 transform active:scale-[0.98] transition-all"
+                >
+                    <div className="flex flex-col items-center leading-none">
+                        <span className="text-lg">TẢI XUỐNG NGAY (VIP)</span>
+                        <span className="text-[10px] opacity-80 font-normal">Tốc độ cao • Không quảng cáo</span>
+                    </div>
+                </Link>
+            </div>
+        )
+    }
+
+    return (
+        <div className="space-y-4">
+            <AddToCartButtons product={{
+                id: product.id,
+                title: product.title,
+                price: (product.price / 100) * 25000,
+                category: product.category,
+                thumbnail: product.thumbnailUrl
+            }} />
+
+            <Link href="/vip" className="block text-center text-sm text-amber-500 hover:text-amber-400 hover:underline">
+                Hoặc trở thành VIP để tải miễn phí trọn đời
+            </Link>
+        </div>
+    );
 }

@@ -48,13 +48,17 @@ export default async function Home() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button className="w-full sm:w-auto px-8 py-4 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-orange-600/25 flex items-center justify-center gap-2">
+            <Link href="#products" className="w-full sm:w-auto px-8 py-4 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2">
               Khám phá ngay
               <ArrowRight size={20} />
-            </button>
-            <button className="w-full sm:w-auto px-8 py-4 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-white font-semibold rounded-xl transition-all">
-              Đăng bán tài nguyên
-            </button>
+            </Link>
+            <Link href="/vip" className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-orange-600/25 flex items-center justify-center gap-2 relative overflow-hidden group">
+              <span className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+              <div className="relative flex items-center gap-2">
+                <Sparkles size={20} className="text-yellow-200" />
+                <span>Trở thành VIP (Tải Free)</span>
+              </div>
+            </Link>
           </div>
         </div>
 
