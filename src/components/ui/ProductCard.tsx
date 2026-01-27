@@ -9,6 +9,7 @@ interface Product {
     id: string;
     title: string;
     price: number;
+    originalPrice?: number;
     category: string;
     thumbnail: string;
 }
@@ -24,6 +25,12 @@ import Link from 'next/link';
 export default function ProductCard({ product }: ProductCardProps) {
     const { addToCart } = useCartStore();
 
+    // Calculate Discount
+    const hasDiscount = product.originalPrice && product.originalPrice > product.price;
+    const discountPercent = hasDiscount
+        ? Math.round(((product.originalPrice! - product.price) / product.originalPrice!) * 100)
+        : 0;
+
     return (
         <motion.div
             whileHover={{ scale: 1.02 }}
@@ -38,6 +45,13 @@ export default function ProductCard({ product }: ProductCardProps) {
                         fill
                         className="object-cover transition-transform duration-500 group-hover:scale-110"
                     />
+                    {/* Discount Badge */}
+                    {hasDiscount && (
+                        <div className="absolute top-3 right-3 z-10 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-md shadow-lg animate-pulse">
+                            -{discountPercent}%
+                        </div>
+                    )}
+
                     {/* Overlay Actions */}
                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-4">
                         <div className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full text-white transition-colors" title="Xem nhanh">
@@ -84,9 +98,16 @@ export default function ProductCard({ product }: ProductCardProps) {
                     </div>
 
                     <div className="mt-auto flex items-center justify-between pt-2">
-                        <span className="text-xl font-bold text-white">
-                            {formatVND(product.price)}
-                        </span>
+                        <div className="flex flex-col items-start gap-1">
+                            {hasDiscount && (
+                                <span className="text-xs text-slate-500 line-through decoration-slate-500/50">
+                                    {formatVND(product.originalPrice!)}
+                                </span>
+                            )}
+                            <span className="text-xl font-bold text-white">
+                                {formatVND(product.price)}
+                            </span>
+                        </div>
                         <div className="text-xs font-bold px-3 py-2 bg-slate-800 hover:bg-orange-500 hover:text-white rounded-lg text-slate-300 transition-all flex items-center gap-2 uppercase tracking-wide">
                             Xem chi tiết
                         </div>

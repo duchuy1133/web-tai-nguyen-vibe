@@ -29,6 +29,7 @@ model Product {
   title           String
   description     String
   price           Int             // Stored in cents (e.g., 2900 = $29.00)
+  originalPrice   Int?            @map("original_price") // Optional original price for discount calculation
   category        ProductCategory
   thumbnailUrl    String          @map("thumbnail_url")
   previewVideoUrl String?         @map("preview_video_url")

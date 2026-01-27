@@ -15,8 +15,29 @@ async function getProducts() {
         createdAt: 'desc',
       },
       take: 6,
+      select: {
+        id: true,
+        title: true,
+        price: true,
+        originalPrice: true,
+        category: true,
+        thumbnailUrl: true,
+      }
     });
-    return products;
+    // Map thumbnailUrl to thumbnail to match ProductCard interface if needed
+    // Wait, ProductCard interface expects `thumbnail` but DB has `thumbnailUrl`.
+    // In schema: `thumbnailUrl String @map("thumbnail_url")`
+    // Step 917 ProductCard interface: `thumbnail: string;`
+    // Step 922 `getProducts` returns `products`.
+    // `products` from Prisma has `thumbnailUrl`.
+    // If I pass `products` to `ProductCard`, `thumbnail` prop will be undefined!
+    // THIS IS THE BUG!
+    // ProductCard expects `thumbnail`, Prisma gives `thumbnailUrl`.
+    // I need to map it.
+    return products.map(p => ({
+      ...p,
+      thumbnail: p.thumbnailUrl
+    }));
   } catch (error) {
     console.error("Failed to fetch products:", error);
     return [];

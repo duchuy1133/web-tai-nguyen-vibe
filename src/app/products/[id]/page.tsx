@@ -113,12 +113,21 @@ export default async function ProductDetailPage({ params }: Props) {
                                 </span>
                             </div>
 
-                            <div className="text-4xl font-bold text-white mb-8 flex items-baseline gap-2">
-                                {/* Mock price logic same as homepage */}
-                                {formatVND((product.price / 100) * 25000)}
-                                <span className="text-lg text-slate-500 font-normal line-through">
-                                    {formatVND(((product.price / 100) * 25000) * 1.5)}
-                                </span>
+                            <div className="flex items-end gap-3 mb-8">
+                                <div className="text-4xl font-bold text-white leading-none">
+                                    {formatVND(product.price)}
+                                </div>
+
+                                {product.originalPrice && product.originalPrice > product.price && (
+                                    <>
+                                        <div className="text-xl text-slate-500 font-normal line-through decoration-slate-500/50 mb-1">
+                                            {formatVND(product.originalPrice)}
+                                        </div>
+                                        <div className="mb-2 px-2 py-1 bg-red-500/10 text-red-500 text-xs font-bold rounded border border-red-500/20">
+                                            -{Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}%
+                                        </div>
+                                    </>
+                                )}
                             </div>
 
                             {/* --- VIP & BUY LOGIC --- */}
