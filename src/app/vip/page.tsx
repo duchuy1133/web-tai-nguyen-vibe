@@ -1,6 +1,7 @@
 import { CheckCircle2, Crown, Zap, ShieldCheck, Gift, Infinity } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import CountdownTimer from "@/components/ui/CountdownTimer";
 
 export default function VipPage() {
     return (
@@ -42,6 +43,8 @@ export default function VipPage() {
 
                     {/* Right: Pricing & CTA */}
                     <div className="bg-slate-950/50 rounded-2xl p-8 border border-slate-800 text-center relative z-10 w-full">
+                        <CountdownTimer />
+
                         <div className="mb-2 text-slate-400 text-sm uppercase tracking-widest">Gói Trọn Đời</div>
                         <div className="flex items-center justify-center gap-2 mb-6">
                             <span className="text-2xl text-slate-500 line-through">1.990.000đ</span>
