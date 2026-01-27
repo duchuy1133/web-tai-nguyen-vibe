@@ -247,11 +247,10 @@ function ProductGrid({ products }: { products: any[] }) {
           product={{
             id: product.id,
             title: product.title,
-            // Mock conversion: Cents USD -> VND (approx x250)
-            // Example: 2900 cents = $29.00 -> 29 * 25,000 = 725,000 VND
-            price: (product.price / 100) * 25000,
+            price: product.price,
+            originalPrice: product.originalPrice,
             category: product.category,
-            thumbnail: product.thumbnailUrl,
+            thumbnail: product.thumbnail || product.thumbnailUrl,
           }}
         />
       ))}
