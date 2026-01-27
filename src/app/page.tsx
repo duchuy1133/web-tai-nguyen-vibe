@@ -1,3 +1,4 @@
+import Link from "next/link";
 import ProductCard from "@/components/ui/ProductCard";
 import { ArrowRight, Sparkles, Zap, DollarSign, Database } from "lucide-react";
 import prisma from "@/lib/prisma";
@@ -69,14 +70,21 @@ export default async function Home() {
 
           {/* Category Tabs */}
           <div className="flex flex-wrap items-center justify-center gap-2 md:gap-4 mt-8">
-            {["Tất cả", "Plugins", "Mẫu (Template)", "Luts & Màu", "Âm thanh"].map((cat, i) => (
-              <button
-                key={cat}
-                className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${i === 0 ? 'bg-white text-slate-950' : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'}`}
-              >
-                {cat}
-              </button>
-            ))}
+            <Link href="/" className="px-5 py-2 rounded-full text-sm font-medium transition-all bg-white text-slate-950 border border-transparent">
+              Tất cả
+            </Link>
+            <Link href="/category/plugin" className="px-5 py-2 rounded-full text-sm font-medium transition-all bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800">
+              Plugins
+            </Link>
+            <Link href="/category/template" className="px-5 py-2 rounded-full text-sm font-medium transition-all bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800">
+              Mẫu (Template)
+            </Link>
+            <Link href="/category/luts" className="px-5 py-2 rounded-full text-sm font-medium transition-all bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800">
+              Luts & Màu
+            </Link>
+            <Link href="/category/sound" className="px-5 py-2 rounded-full text-sm font-medium transition-all bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800">
+              Âm thanh
+            </Link>
           </div>
         </div>
 

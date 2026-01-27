@@ -64,7 +64,9 @@ export default async function ProductDetailPage({ params }: Props) {
                 <div className="flex items-center text-sm text-slate-400">
                     <Link href="/" className="hover:text-amber-400 transition-colors">Trang chủ</Link>
                     <ChevronRight size={14} className="mx-2" />
-                    <span className="uppercase tracking-wider font-medium text-slate-300">{product.category}</span>
+                    <Link href={`/category/${product.category.toLowerCase()}`} className="uppercase tracking-wider font-medium text-slate-300 hover:text-amber-400 transition-colors">
+                        {product.category}
+                    </Link>
                     <ChevronRight size={14} className="mx-2" />
                     <span className="text-white truncate max-w-[200px] md:max-w-md">{product.title}</span>
                 </div>
