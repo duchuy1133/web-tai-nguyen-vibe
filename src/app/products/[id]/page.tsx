@@ -87,16 +87,7 @@ export default async function ProductDetailPage({ params }: Props) {
                             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 to-transparent pointer-events-none" />
                         </div>
 
-                        <div className="grid grid-cols-3 gap-4">
-                            {/* Mock thumbnails gallery */}
-                            {[1, 2, 3].map((_, i) => (
-                                <div key={i} className="aspect-video rounded-lg bg-slate-800 border border-slate-700/50 hover:border-amber-500 transition-colors cursor-pointer relative overflow-hidden opacity-70 hover:opacity-100">
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                        <MonitorPlay size={20} className="text-slate-500" />
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+
                     </div>
 
                     {/* Right Column: Info & Actions */}

@@ -72,3 +72,15 @@ model User {
 
   @@map("users")
 }
+
+model Post {
+  id        String   @id @default(cuid())
+  title     String
+  slug      String   @unique
+  excerpt   String
+  content   String
+  thumbnail String
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  @@map("posts")
+}

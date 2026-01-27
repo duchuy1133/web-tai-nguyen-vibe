@@ -39,6 +39,14 @@ export default function Navbar() {
                         type="text"
                         placeholder="Tìm kiếm..."
                         className="w-full bg-slate-900 border border-slate-800 text-slate-200 pl-10 pr-4 py-2 rounded-full focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all font-sans text-sm"
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                const target = e.target as HTMLInputElement;
+                                if (target.value.trim()) {
+                                    window.location.href = `/search?q=${encodeURIComponent(target.value.trim())}`;
+                                }
+                            }
+                        }}
                     />
                     <Search className="absolute left-3 text-slate-500 w-4 h-4" />
                 </div>
