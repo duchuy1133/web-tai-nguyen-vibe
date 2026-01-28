@@ -16,6 +16,7 @@ import {
     ShieldCheck
 } from "lucide-react";
 import AddToCartButtons from "@/components/ui/AddToCartButtons";
+import RelatedProducts from "@/components/RelatedProducts";
 
 // Force dynamic rendering since we are fetching based on ID
 export const dynamic = 'force-dynamic';
@@ -57,6 +58,17 @@ export default async function ProductDetailPage({ params }: Props) {
         notFound();
     }
 
+    // Fetch related products
+    const relatedProducts = await prisma.product.findMany({
+        where: {
+            category: product.category,
+            id: { not: product.id }, // Exclude current product
+            isDeleted: false,
+        },
+        take: 15,
+        orderBy: { createdAt: 'desc' },
+    });
+
     return (
         <div className="min-h-screen pt-12 pb-20">
             {/* Breadcrumbs */}
@@ -86,8 +98,6 @@ export default async function ProductDetailPage({ params }: Props) {
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 to-transparent pointer-events-none" />
                         </div>
-
-
                     </div>
 
                     {/* Right Column: Info & Actions */}
@@ -130,9 +140,6 @@ export default async function ProductDetailPage({ params }: Props) {
                                 )}
                             </div>
 
-                            {/* --- VIP & BUY LOGIC --- */}
-                            {/* TODO: Integrate Real Auth here. Mocking isVip = false for now */}
-                            {/* Change to true to test VIP view */}
                             <VipActionSection product={product} />
 
                             <div className="flex items-center gap-4 text-xs text-slate-500 justify-center sm:justify-start mt-6">
@@ -179,6 +186,12 @@ export default async function ProductDetailPage({ params }: Props) {
                         </ul>
                     </div>
                 </div>
+
+            </div>
+
+            {/* Related Products Section */}
+            <div className="mt-20">
+                <RelatedProducts products={relatedProducts} />
             </div>
         </div>
     );
