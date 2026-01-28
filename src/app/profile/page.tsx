@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
-import { Loader2, User, Wallet, CreditCard, LogOut, ArrowLeft, History, ShieldCheck } from 'lucide-react';
+import { Loader2, User, Wallet, CreditCard, LogOut, ArrowLeft, History, ShieldCheck, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 
 // Init Supabase Client
@@ -13,63 +13,53 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export default function ProfilePage() {
     const router = useRouter();
+
+    // State đơn giản
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState<any>(null);
     const [profile, setProfile] = useState<any>(null);
+    const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
     useEffect(() => {
-        let isMounted = true; // Biến kiểm tra component có còn mounted không
-
-        const getData = async () => {
+        const fetchProfileData = async () => {
             try {
                 // 1. Get Auth User
                 const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-                // Nếu component đã unmount, dừng lại ngay
-                if (!isMounted) return;
-
                 if (authError || !user) {
+                    console.log("No user found, redirecting...");
                     router.push('/login');
                     return;
                 }
 
                 setUser(user);
 
-                // 2. Get User Profile (Balance)
+                // 2. Get User Profile (Balance) from 'users' table
                 const { data: userProfile, error: profileError } = await supabase
                     .from('users')
                     .select('*')
                     .eq('id', user.id)
                     .single();
 
-                if (!isMounted) return;
-
-                if (profileError && profileError.code !== 'PGRST116') {
-                    // Log lỗi nếu không phải do không tìm thấy data (PGRST116 là no rows found)
-                    console.error('Profile fetch error:', profileError);
+                if (profileError) {
+                    console.error('Lỗi lấy profile:', profileError);
+                    // Nếu lỗi không phải do data rỗng (VD: mất mạng, sai quyền...)
+                    if (profileError.code !== 'PGRST116') {
+                        setErrorMsg(`Lỗi lấy dữ liệu: ${profileError.message} (${profileError.code})`);
+                    }
                 }
 
                 setProfile(userProfile || { balance: 0 });
 
-            } catch (error: any) {
-                // Bỏ qua lỗi AbortError
-                if (error.name === 'AbortError' || error.message?.includes('aborted')) {
-                    return;
-                }
-                console.error('Error fetching profile:', error);
+            } catch (err: any) {
+                console.error('Lỗi không xác định:', err);
+                setErrorMsg(`Lỗi hệ thống: ${err.message}`);
             } finally {
-                if (isMounted) {
-                    setLoading(false);
-                }
+                setLoading(false);
             }
         };
 
-        getData();
-
-        // Cleanup function
-        return () => {
-            isMounted = false;
-        };
+        fetchProfileData();
     }, [router]);
 
     const handleSignOut = async () => {
@@ -78,11 +68,12 @@ export default function ProfilePage() {
         router.refresh();
     };
 
+    // UI Loading
     if (loading) {
         return (
             <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center gap-4">
                 <Loader2 className="animate-spin text-amber-500" size={48} />
-                <p className="text-slate-400 animate-pulse">Đang tải hồ sơ...</p>
+                <p className="text-slate-400 animate-pulse font-medium">Đang tải hồ sơ...</p>
             </div>
         );
     }
@@ -103,6 +94,17 @@ export default function ProfilePage() {
                     </Link>
                     <span className="text-slate-500 text-sm hidden md:block">ID: {user.id.slice(0, 8)}...</span>
                 </div>
+
+                {/* Error Alert Display */}
+                {errorMsg && (
+                    <div className="mb-6 p-4 bg-red-500/10 border border-red-500/50 rounded-xl flex items-center gap-3 text-red-400">
+                        <AlertCircle size={24} />
+                        <div>
+                            <p className="font-bold">Đã xảy ra lỗi!</p>
+                            <p className="text-sm">{errorMsg}</p>
+                        </div>
+                    </div>
+                )}
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
