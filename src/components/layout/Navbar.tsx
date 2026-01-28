@@ -1,11 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { Search, ShoppingCart, User, Menu } from 'lucide-react';
+import { Search, ShoppingCart, User, Menu, Wallet } from 'lucide-react';
 import { useCartStore } from '@/store/useCartStore';
 import { useEffect, useState } from 'react';
 
-export default function Navbar() {
+export default function Navbar({ user }: { user?: any }) {
     const { items, openCart } = useCartStore();
     const [mounted, setMounted] = useState(false);
 
@@ -66,10 +66,29 @@ export default function Navbar() {
                         )}
                     </button>
 
-                    <button className="hidden md:flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 rounded-full hover:bg-slate-800 transition-colors text-sm font-medium text-slate-300">
-                        <User size={16} />
-                        <span>Đăng nhập</span>
-                    </button>
+                    {/* AUTH STATE (Real) */}
+                    {user ? (
+                        <div className="hidden md:flex items-center gap-4">
+                            {/* Balance Wallet */}
+                            <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-full">
+                                <Wallet className="text-amber-500" size={16} />
+                                <span className="text-amber-500 font-bold text-sm">
+                                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(user.balance || 0)}
+                                </span>
+                            </div>
+
+                            <button className="flex items-center gap-2 px-1 py-1 hover:bg-slate-800 rounded-full transition-colors">
+                                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm uppercase">
+                                    {user.name ? user.name.substring(0, 2) : 'U'}
+                                </div>
+                            </button>
+                        </div>
+                    ) : (
+                        <button className="hidden md:flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 rounded-full hover:bg-slate-800 transition-colors text-sm font-medium text-slate-300">
+                            <User size={16} />
+                            <span>Đăng nhập</span>
+                        </button>
+                    )}
 
                     <button className="md:hidden text-slate-400 hover:text-white">
                         <Menu size={24} />

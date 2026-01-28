@@ -64,6 +64,7 @@ model User {
   id            String    @id @default(cuid())
   email         String    @unique
   name          String?
+  balance       Int       @default(0) // Balance in cents
   
   isVip         Boolean   @default(false) @map("is_vip")
   vipSince      DateTime? @map("vip_since")

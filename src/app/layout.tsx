@@ -16,15 +16,19 @@ export const metadata: Metadata = {
 
 import CartDrawer from "@/components/cart/CartDrawer";
 
-export default function RootLayout({
+import { getCurrentUser } from "@/lib/auth";
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const user = await getCurrentUser();
+
   return (
     <html lang="en" className="dark">
       <body className={cn(inter.className, "bg-slate-950 text-slate-200 antialiased min-h-screen flex flex-col")}>
-        <Navbar />
+        <Navbar user={user} />
         <div className="pt-16">
           <PopularTags />
         </div>
