@@ -4,6 +4,7 @@ import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { cn } from "@/lib/utils";
+import PopularTags from "@/components/PopularTags";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -24,8 +25,11 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className={cn(inter.className, "bg-slate-950 text-slate-200 antialiased min-h-screen flex flex-col")}>
         <Navbar />
+        <div className="pt-16">
+          <PopularTags />
+        </div>
         <CartDrawer />
-        <main className="flex-grow pt-16">
+        <main className="flex-grow">
           {children}
         </main>
         <Footer />
