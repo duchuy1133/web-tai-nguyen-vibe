@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Search, ShoppingCart, User, Menu, Wallet, LogOut } from 'lucide-react';
+import { Search, ShoppingCart, User, Menu, LogOut, Wallet } from 'lucide-react';
 import { useCartStore } from '@/store/useCartStore';
 import { useEffect, useState, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
@@ -19,23 +19,50 @@ export default function Navbar() {
 
     // Auth State
     const [user, setUser] = useState<any>(null);
+    const [balance, setBalance] = useState<number>(0); // State số dư
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    // Fetch User
+    // Fetch User & Balance
     useEffect(() => {
         setMounted(true);
 
-        const getUser = async () => {
+        const getUserData = async () => {
             const { data: { user } } = await supabase.auth.getUser();
             setUser(user);
+
+            if (user) {
+                // Fetch Balance từ bảng users
+                const { data: userData, error } = await supabase
+                    .from('users')
+                    .select('balance')
+                    .eq('id', user.id)
+                    .single();
+
+                if (userData && !error) {
+                    setBalance(userData.balance || 0);
+                }
+            }
         };
 
-        getUser();
+        getUserData();
 
-        // Listen for auth changes (optional but good for realtime update)
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setUser(session?.user ?? null);
+        // Listen for auth changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+            const currentUser = session?.user ?? null;
+            setUser(currentUser);
+
+            if (currentUser) {
+                // Fetch Balance lại khi auth change (ví dụ login xong)
+                const { data: userData } = await supabase
+                    .from('users')
+                    .select('balance')
+                    .eq('id', currentUser.id)
+                    .single();
+                if (userData) setBalance(userData.balance || 0);
+            } else {
+                setBalance(0);
+            }
         });
 
         return () => subscription.unsubscribe();
@@ -57,7 +84,8 @@ export default function Navbar() {
     const handleSignOut = async () => {
         await supabase.auth.signOut();
         setUser(null);
-        window.location.reload(); // Reload để reset state toàn app
+        setBalance(0);
+        window.location.reload(); // Reload để reset state
     };
 
     return (
@@ -116,37 +144,46 @@ export default function Navbar() {
                     {/* AUTH STATE (Real) */}
                     {mounted ? (
                         user ? (
-                            <div className="relative" ref={dropdownRef}>
-                                <button
-                                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                                    className="flex items-center gap-2 hover:bg-slate-800 rounded-full transition-colors p-1"
-                                >
-                                    {/* Avatar Circle */}
-                                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm uppercase shadow-lg border border-slate-700">
-                                        {user.email ? user.email.charAt(0) : 'U'}
-                                    </div>
-                                </button>
+                            <div className="flex items-center gap-3">
+                                {/* Balance Display */}
+                                <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-full">
+                                    <span className="text-yellow-400 font-bold text-sm">
+                                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(balance)}
+                                    </span>
+                                </div>
 
-                                {/* Dropdown Menu */}
-                                {isDropdownOpen && (
-                                    <div className="absolute right-0 top-full mt-2 w-48 bg-slate-900 border border-slate-800 rounded-xl shadow-xl overflow-hidden py-1 transform origin-top-right transition-all animate-in fade-in zoom-in-95 duration-200">
-                                        <div className="px-4 py-3 border-b border-slate-800">
-                                            <p className="text-sm text-white font-medium truncate">{user.email}</p>
-                                            <p className="text-xs text-slate-500">Thành viên</p>
+                                <div className="relative" ref={dropdownRef}>
+                                    <button
+                                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                                        className="flex items-center gap-2 hover:bg-slate-800 rounded-full transition-colors p-1"
+                                    >
+                                        {/* Avatar Circle */}
+                                        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm uppercase shadow-lg border border-slate-700">
+                                            {user.email ? user.email.charAt(0) : 'U'}
                                         </div>
+                                    </button>
 
-                                        <Link href="/profile" className="flex items-center gap-2 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
-                                            <User size={16} /> Hồ sơ cá nhân
-                                        </Link>
+                                    {/* Dropdown Menu */}
+                                    {isDropdownOpen && (
+                                        <div className="absolute right-0 top-full mt-2 w-48 bg-slate-900 border border-slate-800 rounded-xl shadow-xl overflow-hidden py-1 transform origin-top-right transition-all animate-in fade-in zoom-in-95 duration-200">
+                                            <div className="px-4 py-3 border-b border-slate-800">
+                                                <p className="text-sm text-white font-medium truncate">{user.email}</p>
+                                                <p className="text-xs text-slate-500">Thành viên</p>
+                                            </div>
 
-                                        <button
-                                            onClick={handleSignOut}
-                                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors text-left"
-                                        >
-                                            <LogOut size={16} /> Đăng xuất
-                                        </button>
-                                    </div>
-                                )}
+                                            <Link href="/profile" className="flex items-center gap-2 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
+                                                <User size={16} /> Hồ sơ cá nhân
+                                            </Link>
+
+                                            <button
+                                                onClick={handleSignOut}
+                                                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors text-left"
+                                            >
+                                                <LogOut size={16} /> Đăng xuất
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         ) : (
                             <div className="hidden md:flex items-center gap-4">
@@ -161,7 +198,7 @@ export default function Navbar() {
                             </div>
                         )
                     ) : (
-                        // Placeholder khi chưa mount để tránh hydration mismatch (giữ layout)
+                        // Placeholder khi chưa mount
                         <div className="w-20 h-9" />
                     )}
 
