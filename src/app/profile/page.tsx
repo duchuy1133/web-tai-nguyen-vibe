@@ -50,6 +50,10 @@ export default function ProfilePage() {
                 }
 
                 setProfile(userProfile || { balance: 0 });
+                // Update Navbar Balance
+                if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new Event('BALANCE_UPDATED'));
+                }
 
             } catch (err: any) {
                 console.error('Lỗi không xác định:', err);

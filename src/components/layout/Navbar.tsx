@@ -23,6 +23,25 @@ export default function Navbar() {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
+    // Event Listener for Balance Updates
+    useEffect(() => {
+        const handleBalanceUpdate = () => {
+            if (user) {
+                supabase
+                    .from('users')
+                    .select('balance')
+                    .eq('id', user.id)
+                    .single()
+                    .then(({ data }) => {
+                        if (data) setBalance(data.balance || 0);
+                    });
+            }
+        };
+
+        window.addEventListener('BALANCE_UPDATED', handleBalanceUpdate);
+        return () => window.removeEventListener('BALANCE_UPDATED', handleBalanceUpdate);
+    }, [user]);
+
     // Fetch User & Balance
     useEffect(() => {
         setMounted(true);
@@ -53,7 +72,7 @@ export default function Navbar() {
             setUser(currentUser);
 
             if (currentUser) {
-                // Fetch Balance lại khi auth change (ví dụ login xong)
+                // Fetch Balance lại khi auth change
                 const { data: userData } = await supabase
                     .from('users')
                     .select('balance')

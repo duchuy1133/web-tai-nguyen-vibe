@@ -45,7 +45,7 @@ export const useCartStore = create<CartState>()(
             total: () => get().items.reduce((sum, item) => sum + item.price, 0),
         }),
         {
-            name: 'vibe-cart-storage', // key in localStorage
+            name: 'vibe-cart-storage-v2', // Changed key to reset legacy cart data
         }
     )
 );

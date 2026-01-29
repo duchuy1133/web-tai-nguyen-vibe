@@ -170,6 +170,8 @@ function CheckoutContent() {
 
             if (result.success) {
                 alert("Thanh toán thành công! Đang chuyển về hồ sơ...");
+                // UPDATE NAVBAR BALANCE
+                window.dispatchEvent(new Event('BALANCE_UPDATED'));
                 // FORCE REDIRECT
                 router.push('/profile');
             } else {
