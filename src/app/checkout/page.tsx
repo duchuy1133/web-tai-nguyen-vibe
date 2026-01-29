@@ -18,10 +18,15 @@ import {
     ArrowLeft
 } from "lucide-react";
 
+import { useCartStore } from '@/store/useCartStore';
+
 function CheckoutContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const productId = searchParams.get('id');
+
+    // Cart Store
+    const { items: cartItems, total: cartTotal, clearCart } = useCartStore();
 
     // States
     const [loading, setLoading] = useState(true);
@@ -30,43 +35,30 @@ function CheckoutContent() {
     // Data States
     const [user, setUser] = useState<any>(null);
     const [balance, setBalance] = useState(0);
-    const [product, setProduct] = useState<any>(null);
+    const [singleProduct, setSingleProduct] = useState<any>(null);
     const [fetchError, setFetchError] = useState<string | null>(null);
+
+    // Derived State
+    const isBuyNow = !!productId;
+    const checkoutItems = isBuyNow ? (singleProduct ? [singleProduct] : []) : cartItems;
+    const totalAmount = isBuyNow ? (singleProduct?.price || 0) : cartTotal();
 
     // Fetching Flag
     const isFetching = useRef(false);
 
     // --- NUCLEAR ERROR SUPPRESSION START ---
     useEffect(() => {
-        // 1. Suppress console.error
         const originalError = console.error;
         console.error = (...args) => {
             const errStr = args[0]?.toString() || '';
-            if (
-                errStr.includes('aborted') ||
-                errStr.includes('AbortError') ||
-                errStr.includes('signal is aborted') ||
-                errStr.includes('AuthSessionMissing')
-            ) {
-                return;
-            }
+            if (errStr.includes('aborted') || errStr.includes('AbortError') || errStr.includes('signal is aborted') || errStr.includes('AuthSessionMissing')) return;
             originalError.apply(console, args);
         };
-
-        // 2. Suppress Unhandled Promise Rejections (The Overlay Killer)
         const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
             const reason = event.reason?.toString() || '';
-            if (
-                reason.includes('aborted') ||
-                reason.includes('AbortError') ||
-                reason.includes('signal is aborted')
-            ) {
-                event.preventDefault(); // STOP THE OVERLAY
-            }
+            if (reason.includes('aborted') || reason.includes('AbortError') || reason.includes('signal is aborted')) event.preventDefault();
         };
-
         window.addEventListener('unhandledrejection', handleUnhandledRejection);
-
         return () => {
             console.error = originalError;
             window.removeEventListener('unhandledrejection', handleUnhandledRejection);
@@ -79,43 +71,39 @@ function CheckoutContent() {
         let isMounted = true;
 
         const fetchData = async () => {
-            // 1. Validation
-            if (!productId) {
-                if (isMounted) {
-                    setFetchError("Thiếu ID sản phẩm. Vui lòng chọn sản phẩm từ trang chủ.");
-                    setLoading(false);
-                }
-                return;
-            }
-
             // 2. Lock
             if (isFetching.current) return;
             isFetching.current = true;
-
             if (isMounted) setFetchError(null);
 
             try {
-                // 3. SEQUENTIAL Fetching (Slower but Safer)
+                // Step A: Fetch Product (If Buy Now)
+                if (isBuyNow) {
+                    const { data: productData, error: productError } = await supabase
+                        .from('products')
+                        .select('*')
+                        .eq('id', productId)
+                        .single();
 
-                // Step A: Fetch Product
-                const { data: productData, error: productError } = await supabase
-                    .from('products')
-                    .select('*')
-                    .eq('id', productId)
-                    .single();
+                    if (!isMounted) return;
 
-                if (!isMounted) return;
-
-                if (productError || !productData) {
-                    if (productError?.code !== 'PGRST116') console.warn("Prod Error:", productError);
-                    setFetchError("Không tìm thấy thông tin sản phẩm.");
-                    setLoading(false);
-                    return;
+                    if (productError || !productData) {
+                        setFetchError("Không tìm thấy thông tin sản phẩm.");
+                        setLoading(false);
+                        return;
+                    }
+                    setSingleProduct(productData);
+                } else {
+                    // Cart Mode: Check if empty
+                    if (cartItems.length === 0) {
+                        setFetchError("Giỏ hàng đang trống. Vui lòng thêm sản phẩm.");
+                        setLoading(false);
+                        return;
+                    }
                 }
-                setProduct(productData);
 
                 // Step B: Fetch User
-                const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+                const { data: { user: authUser } } = await supabase.auth.getUser();
 
                 if (!isMounted) return;
 
@@ -134,7 +122,6 @@ function CheckoutContent() {
                 }
 
             } catch (err: any) {
-                // SILENT CATCH - Do not logging AbortErrors
                 const msg = err.message || err.toString();
                 if (!msg.includes('aborted') && !msg.includes('AbortError')) {
                     console.warn("System Error:", err);
@@ -142,42 +129,59 @@ function CheckoutContent() {
             } finally {
                 if (isMounted) {
                     setLoading(false);
-                    isFetching.current = false; // Release lock
+                    isFetching.current = false;
                 }
             }
         };
 
-        // Small delay to ensure hydration is complete
         const timeoutId = setTimeout(fetchData, 100);
 
         return () => {
             isMounted = false;
             clearTimeout(timeoutId);
-            isFetching.current = false; // Fix: Always release lock on unmount/re-run
+            isFetching.current = false;
         };
-    }, [productId]);
+    }, [productId, isBuyNow]); // Removed cartItems dependency to avoid loop, check assumes cart static during checkout
 
     // HANDLE PAYMENT
     const handlePayment = async () => {
         if (!user) return alert("Vui lòng đăng nhập để thanh toán!");
-        if (balance < product.price) return alert("Số dư ví không đủ. Vui lòng nạp thêm!");
+        if (balance < totalAmount) return alert("Số dư ví không đủ. Vui lòng nạp thêm!");
 
-        if (!confirm(`Xác nhận mua "${product.title}" với giá ${formatVND(product.price)}?`)) return;
+        if (!confirm(`Xác nhận thanh toán tổng cộng ${formatVND(totalAmount)}?`)) return;
 
         setProcessing(true);
         try {
-            // Call Server Action
-            const result = await purchaseProduct(user.id, product.id);
+            let successCount = 0;
+            let firstError = '';
 
-            if (result.success) {
-                alert("Thanh toán thành công! Đang chuyển về hồ sơ...");
+            // Process Items Sequentially
+            for (const item of checkoutItems) {
+                const result = await purchaseProduct(user.id, item.id);
+                if (result.success) {
+                    successCount++;
+                } else {
+                    firstError = result.error || 'Lỗi không xác định';
+                    console.error(`Failed to buy ${item.id}:`, result.error);
+                }
+            }
+
+            if (successCount > 0) {
                 // UPDATE NAVBAR BALANCE
                 window.dispatchEvent(new Event('BALANCE_UPDATED'));
-                // FORCE REDIRECT
-                router.push('/profile');
+
+                if (successCount === checkoutItems.length) {
+                    alert("Thanh toán thành công toàn bộ đơn hàng!");
+                    if (!isBuyNow) clearCart(); // Clear cart if bought all
+                    router.push('/profile');
+                } else {
+                    alert(`Thanh toán thành công ${successCount}/${checkoutItems.length} món. Lỗi: ${firstError}`);
+                    router.push('/profile');
+                }
             } else {
-                alert(`Giao dịch thất bại: ${result.error}`);
+                alert(`Giao dịch thất bại: ${firstError}`);
             }
+
         } catch (error: any) {
             alert(`Lỗi hệ thống: ${error.message}`);
         } finally {
@@ -190,7 +194,7 @@ function CheckoutContent() {
         return (
             <div className="min-h-screen bg-slate-950 pt-24 pb-20 flex flex-col items-center justify-center text-center px-4">
                 <AlertCircle className="text-red-500 mb-4" size={48} />
-                <h1 className="text-white text-2xl font-bold mb-2">Đã xảy ra lỗi</h1>
+                <h1 className="text-white text-2xl font-bold mb-2">Thông báo</h1>
                 <p className="text-slate-400 mb-6">{fetchError}</p>
                 <Link href="/" className="px-6 py-3 bg-slate-800 rounded-xl text-white font-bold hover:bg-slate-700 transition-colors">
                     Về trang chủ
@@ -240,7 +244,7 @@ function CheckoutContent() {
                                         </div>
                                     </div>
 
-                                    {product && balance < product.price && (
+                                    {balance < totalAmount && (
                                         <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-sm flex items-start gap-2">
                                             <AlertCircle size={18} className="shrink-0 mt-0.5" />
                                             <div>
@@ -255,14 +259,11 @@ function CheckoutContent() {
                                 <>
                                     <h2 className="text-xl font-bold text-white mb-4">Thông tin khách hàng</h2>
                                     <div className="space-y-4">
-                                        <input disabled type="text" placeholder="Họ và tên" className="w-full bg-slate-950/50 border border-slate-800 rounded-xl px-4 py-3 text-slate-500 cursor-not-allowed" />
-                                        <input disabled type="email" placeholder="Email nhận hàng" className="w-full bg-slate-950/50 border border-slate-800 rounded-xl px-4 py-3 text-slate-500 cursor-not-allowed" />
-
                                         <div className="p-4 bg-amber-500/10 rounded-xl flex gap-3 text-sm border border-amber-500/20">
                                             <UserCircle className="text-amber-500 shrink-0" size={20} />
                                             <div className="text-amber-200">
                                                 <p className="mb-1 font-bold text-amber-500">Bạn chưa đăng nhập!</p>
-                                                <p>Vui lòng <Link href={`/login?next=/checkout?id=${productId}`} className="underline font-bold text-white hover:text-amber-400">Đăng nhập ngay</Link> để thanh toán bằng Ví.</p>
+                                                <p>Vui lòng <Link href={`/login?next=/checkout${isBuyNow ? `?id=${productId}` : ''}`} className="underline font-bold text-white hover:text-amber-400">Đăng nhập ngay</Link> để thanh toán.</p>
                                             </div>
                                         </div>
                                     </div>
@@ -271,62 +272,49 @@ function CheckoutContent() {
                         </div>
                     </div>
 
-                    {/* RIGHT: Product Info & Action */}
+                    {/* RIGHT: Order Info */}
                     <div>
                         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sticky top-24">
-                            <h2 className="text-xl font-bold text-white mb-6">Đơn hàng</h2>
+                            <h2 className="text-xl font-bold text-white mb-6">Đơn hàng ({checkoutItems.length} sản phẩm)</h2>
 
                             {loading ? (
                                 <div className="animate-pulse space-y-4">
-                                    <div className="flex gap-4">
-                                        <div className="w-20 h-20 bg-slate-800 rounded"></div>
-                                        <div className="flex-1 space-y-2">
-                                            <div className="h-4 bg-slate-800 rounded w-3/4"></div>
-                                            <div className="h-4 bg-slate-800 rounded w-1/2"></div>
-                                        </div>
-                                    </div>
-                                    <div className="h-12 bg-slate-800 rounded w-full mt-4"></div>
+                                    <div className="h-20 bg-slate-800 rounded"></div>
+                                    <div className="h-20 bg-slate-800 rounded"></div>
                                 </div>
-                            ) : product ? (
+                            ) : (
                                 <>
-                                    <div className="flex gap-4 mb-6">
-                                        <div className="relative w-24 h-24 bg-slate-800 rounded-xl overflow-hidden shrink-0 border border-slate-700 flex items-center justify-center">
-                                            {/* HTML IMG TAG - ROCK SOLID */}
-                                            {product.thumbnailUrl ? (
-                                                <img
-                                                    src={product.thumbnailUrl}
-                                                    alt={product.title}
-                                                    className="w-full h-full object-cover"
-                                                    onError={(e) => {
-                                                        e.currentTarget.style.display = 'none';
-                                                    }}
-                                                />
-                                            ) : (
-                                                <ImageIcon size={24} className="text-slate-600" />
-                                            )}
-                                        </div>
-
-                                        <div className="flex-1 min-w-0 flex flex-col justify-center">
-                                            <h3 className="text-white font-medium line-clamp-2 text-lg leading-snug mb-1">{product.title}</h3>
-                                            <p className="text-slate-500 text-sm uppercase">{product.category}</p>
-                                        </div>
+                                    <div className="space-y-4 mb-6 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                                        {checkoutItems.map((item: any, idx: number) => (
+                                            <div key={`${item.id}-${idx}`} className="flex gap-4">
+                                                <div className="relative w-16 h-16 bg-slate-800 rounded-lg overflow-hidden shrink-0 border border-slate-700">
+                                                    <img
+                                                        src={item.thumbnail || item.thumbnailUrl}
+                                                        alt={item.title}
+                                                        className="w-full h-full object-cover"
+                                                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                                    />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <h3 className="text-white font-medium line-clamp-2 text-sm">{item.title}</h3>
+                                                    <p className="text-slate-500 text-xs uppercase">{item.category}</p>
+                                                    <p className="text-orange-400 font-bold text-sm">{formatVND(item.price)}</p>
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
 
                                     <div className="border-t border-slate-800 pt-4 mb-6">
-                                        <div className="flex justify-between items-center text-slate-400 mb-2">
-                                            <span>Giá gốc</span>
-                                            <span className="line-through">{formatVND(product.originalPrice || product.price)}</span>
-                                        </div>
                                         <div className="flex justify-between items-center text-white text-xl font-bold">
-                                            <span>Thành tiền</span>
-                                            <span className="text-orange-500 text-2xl">{formatVND(product.price)}</span>
+                                            <span>Tổng thanh toán</span>
+                                            <span className="text-orange-500 text-2xl">{formatVND(totalAmount)}</span>
                                         </div>
                                     </div>
 
                                     {user ? (
                                         <button
                                             onClick={handlePayment}
-                                            disabled={processing || balance < product.price}
+                                            disabled={processing || balance < totalAmount}
                                             className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white font-bold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-all"
                                         >
                                             {processing ? <Loader2 className="animate-spin" /> : <ShoppingBag size={20} />}
@@ -342,8 +330,6 @@ function CheckoutContent() {
                                         <ShieldCheck size={12} /> Giao dịch được bảo mật 100%
                                     </p>
                                 </>
-                            ) : (
-                                <p className="text-slate-500 text-center py-4">Dữ liệu sản phẩm không khả dụng.</p>
                             )}
                         </div>
                     </div>

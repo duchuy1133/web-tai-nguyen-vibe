@@ -123,7 +123,7 @@ export default function CartDrawer() {
                                     onClick={() => {
                                         closeCart();
                                         if (items.length > 0) {
-                                            router.push(`/checkout?id=${items[0].id}`);
+                                            router.push('/checkout');
                                         }
                                     }}
                                     className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white font-bold rounded-xl shadow-lg shadow-orange-500/25 flex items-center justify-center gap-2 transform active:scale-[0.98] transition-all"
