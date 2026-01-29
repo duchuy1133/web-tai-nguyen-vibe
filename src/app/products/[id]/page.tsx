@@ -243,7 +243,7 @@ function VipActionSection({ product }: { product: any }) {
             <AddToCartButtons product={{
                 id: product.id,
                 title: product.title,
-                price: (product.price / 100) * 25000,
+                price: product.price,
                 category: product.category,
                 thumbnail: product.thumbnailUrl
             }} />
