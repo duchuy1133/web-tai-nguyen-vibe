@@ -1,10 +1,10 @@
 'use client';
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useRef } from "react";
 import Link from "next/link";
-import { createClient } from '@supabase/supabase-js';
-import { purchaseProduct } from "@/actions/checkout"; // Server Action
+import { supabase } from "@/lib/supabaseClient";
+import { purchaseProduct } from "@/actions/checkout";
 import { formatVND } from "@/lib/utils";
 import {
     ShieldCheck,
@@ -18,20 +18,13 @@ import {
     ArrowLeft
 } from "lucide-react";
 
-// Init Supabase Client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
 function CheckoutContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const productId = searchParams.get('id');
 
     // States
-    // loading: controls initial skeleton
     const [loading, setLoading] = useState(true);
-    // processing: controls payment button state
     const [processing, setProcessing] = useState(false);
 
     // Data States
@@ -40,31 +33,53 @@ function CheckoutContent() {
     const [product, setProduct] = useState<any>(null);
     const [fetchError, setFetchError] = useState<string | null>(null);
 
-    // HACK: Suppress Next.js Dev Overlay for AbortError (Giữ lại để chống ngứa mắt)
+    // Fetching Flag
+    const isFetching = useRef(false);
+
+    // --- NUCLEAR ERROR SUPPRESSION START ---
     useEffect(() => {
+        // 1. Suppress console.error
         const originalError = console.error;
         console.error = (...args) => {
+            const errStr = args[0]?.toString() || '';
             if (
-                args[0]?.toString().includes('aborted') ||
-                args[0]?.toString().includes('AbortError') ||
-                args[0]?.toString().includes('signal is aborted')
+                errStr.includes('aborted') ||
+                errStr.includes('AbortError') ||
+                errStr.includes('signal is aborted') ||
+                errStr.includes('AuthSessionMissing')
             ) {
                 return;
             }
             originalError.apply(console, args);
         };
+
+        // 2. Suppress Unhandled Promise Rejections (The Overlay Killer)
+        const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+            const reason = event.reason?.toString() || '';
+            if (
+                reason.includes('aborted') ||
+                reason.includes('AbortError') ||
+                reason.includes('signal is aborted')
+            ) {
+                event.preventDefault(); // STOP THE OVERLAY
+            }
+        };
+
+        window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
         return () => {
             console.error = originalError;
+            window.removeEventListener('unhandledrejection', handleUnhandledRejection);
         }
     }, []);
+    // --- NUCLEAR ERROR SUPPRESSION END ---
 
-    // FETCH DATA LOGIC (Client-side Power)
+    // FETCH DATA LOGIC
     useEffect(() => {
         let isMounted = true;
 
         const fetchData = async () => {
-            if (isMounted) setFetchError(null);
-
+            // 1. Validation
             if (!productId) {
                 if (isMounted) {
                     setFetchError("Thiếu ID sản phẩm. Vui lòng chọn sản phẩm từ trang chủ.");
@@ -73,8 +88,16 @@ function CheckoutContent() {
                 return;
             }
 
+            // 2. Lock
+            if (isFetching.current) return;
+            isFetching.current = true;
+
+            if (isMounted) setFetchError(null);
+
             try {
-                // 1. Fetch Product Data Realtime from DB
+                // 3. SEQUENTIAL Fetching (Slower but Safer)
+
+                // Step A: Fetch Product
                 const { data: productData, error: productError } = await supabase
                     .from('products')
                     .select('*')
@@ -84,22 +107,21 @@ function CheckoutContent() {
                 if (!isMounted) return;
 
                 if (productError || !productData) {
-                    console.warn("Product Fetch Error:", productError);
+                    if (productError?.code !== 'PGRST116') console.warn("Prod Error:", productError);
                     setFetchError("Không tìm thấy thông tin sản phẩm.");
                     setLoading(false);
                     return;
                 }
-
                 setProduct(productData);
 
-                // 2. Fetch User & Balance
+                // Step B: Fetch User
                 const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
 
                 if (!isMounted) return;
 
                 if (authUser) {
                     setUser(authUser);
-                    // Fetch Balance Realtime
+                    // Step C: Fetch Balance
                     const { data: profile } = await supabase
                         .from('users')
                         .select('balance')
@@ -112,16 +134,26 @@ function CheckoutContent() {
                 }
 
             } catch (err: any) {
-                // Catch all other errors
-                console.warn("System Error:", err);
+                // SILENT CATCH - Do not logging AbortErrors
+                const msg = err.message || err.toString();
+                if (!msg.includes('aborted') && !msg.includes('AbortError')) {
+                    console.warn("System Error:", err);
+                }
             } finally {
-                if (isMounted) setLoading(false);
+                if (isMounted) {
+                    setLoading(false);
+                    isFetching.current = false; // Release lock
+                }
             }
         };
 
-        fetchData();
+        // Small delay to ensure hydration is complete
+        const timeoutId = setTimeout(fetchData, 100);
 
-        return () => { isMounted = false; };
+        return () => {
+            isMounted = false;
+            clearTimeout(timeoutId);
+        };
     }, [productId]);
 
     // HANDLE PAYMENT
@@ -133,11 +165,12 @@ function CheckoutContent() {
 
         setProcessing(true);
         try {
-            // Call Server Action for security (Subtract Money + Create Order)
+            // Call Server Action
             const result = await purchaseProduct(user.id, product.id);
 
             if (result.success) {
                 alert("Thanh toán thành công! Đang chuyển về hồ sơ...");
+                // FORCE REDIRECT
                 router.push('/profile');
             } else {
                 alert(`Giao dịch thất bại: ${result.error}`);
