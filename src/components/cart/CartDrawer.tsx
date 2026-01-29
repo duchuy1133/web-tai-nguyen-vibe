@@ -4,7 +4,7 @@ import { useCartStore } from '@/store/useCartStore';
 import { formatVND, cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Trash2, ShoppingBag, CreditCard } from 'lucide-react';
-import Image from 'next/image';
+
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -76,11 +76,13 @@ export default function CartDrawer() {
                                         className="flex gap-4 p-3 bg-slate-900/50 rounded-xl border border-slate-800/50 hover:border-slate-700 group"
                                     >
                                         <div className="relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 bg-slate-800">
-                                            <Image
+                                            <img
                                                 src={item.thumbnail}
                                                 alt={item.title}
-                                                fill
-                                                className="object-cover"
+                                                className="absolute inset-0 w-full h-full object-cover"
+                                                onError={(e) => {
+                                                    e.currentTarget.style.display = 'none';
+                                                }}
                                             />
                                         </div>
 

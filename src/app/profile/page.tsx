@@ -1,15 +1,10 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
 import { Loader2, User, Wallet, CreditCard, LogOut, ArrowLeft, History, ShieldCheck, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
-
-// Init Supabase Client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export default function ProfilePage() {
     const router = useRouter();

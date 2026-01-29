@@ -4,13 +4,8 @@ import Link from 'next/link';
 import { Search, ShoppingCart, User, Menu, LogOut, Wallet } from 'lucide-react';
 import { useCartStore } from '@/store/useCartStore';
 import { useEffect, useState, useRef } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
-
-// Init Supabase Client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export default function Navbar() {
     const { items, openCart } = useCartStore();
