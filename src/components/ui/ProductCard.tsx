@@ -1,6 +1,6 @@
 'use client';
 
-import Image from 'next/image';
+
 import { ShoppingCart, Eye, FileBox, Layers, MonitorPlay } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn, formatVND } from '@/lib/utils';
@@ -39,11 +39,13 @@ export default function ProductCard({ product }: ProductCardProps) {
             <Link href={`/products/${product.id}`} className="flex flex-col h-full">
                 {/* Thumbnail */}
                 <div className="relative aspect-video overflow-hidden">
-                    <Image
+                    <img
                         src={product.thumbnail}
                         alt={product.title}
-                        fill
-                        className="object-cover transition-transform duration-500 group-hover:scale-110"
+                        className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
+                        onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                        }}
                     />
                     {/* Discount Badge */}
                     {hasDiscount && (

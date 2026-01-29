@@ -153,6 +153,7 @@ function CheckoutContent() {
         return () => {
             isMounted = false;
             clearTimeout(timeoutId);
+            isFetching.current = false; // Fix: Always release lock on unmount/re-run
         };
     }, [productId]);
 
